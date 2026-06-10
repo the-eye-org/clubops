@@ -12,7 +12,7 @@ pipeline {
         DOCKER_CREDS = credentials('psgdcgit')
         // Jenkins "Secret file" credential containing the production .env content.
         // Create this in Jenkins with credential ID: clubops-env
-        CLUBOPS_ENV_FILE = credentials('clubops-env')
+        CLUBOPS_ENV_FILE = credentials('theeye-clubops-env')
     }
 
     stages {
