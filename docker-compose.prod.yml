@@ -75,7 +75,7 @@ services:
   nginx:
     image: nginx:1.25-alpine
     ports:
-      - "${CLUBOPS_HOST_PORT:-8006}:80"
+      - "${CLUBOPS_HOST_PORT:-8007}:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - clubops_media_data:/app/media:ro
