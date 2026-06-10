@@ -1,5 +1,3 @@
- println "CLUBOPS JENKINSFILE LOADED"
-
 pipeline {
     agent {
         label 'students'
