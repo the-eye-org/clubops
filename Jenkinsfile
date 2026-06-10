@@ -71,6 +71,36 @@ node('students') {
             '''
         }
 
+        stage('Stop Existing ClubOps Web Container') {
+            sh '''
+                CLUBOPS_PORT="$(grep -E '^CLUBOPS_HOST_PORT=' .env | tail -n 1 | cut -d= -f2- || true)"
+                CLUBOPS_PORT="$(printf '%s' "${CLUBOPS_PORT:-8007}" | tr -d '\015"')"
+                COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-clubops}"
+
+                PORT_CONTAINERS="$(docker ps -q --filter "publish=${CLUBOPS_PORT}" || true)"
+                if [ -n "${PORT_CONTAINERS}" ]; then
+                    for CONTAINER_ID in ${PORT_CONTAINERS}; do
+                        CONTAINER_NAME="$(docker inspect -f '{{.Name}}' "${CONTAINER_ID}" | sed 's#^/##')"
+                        CONTAINER_PROJECT="$(docker inspect -f '{{ index .Config.Labels "com.docker.compose.project" }}' "${CONTAINER_ID}")"
+
+                        if [ "${CONTAINER_PROJECT}" != "${COMPOSE_PROJECT_NAME}" ]; then
+                            echo "Port ${CLUBOPS_PORT} is used by non-ClubOps container ${CONTAINER_NAME} (${CONTAINER_ID})."
+                            echo "Refusing to stop it automatically."
+                            exit 1
+                        fi
+                    done
+                fi
+
+                if docker ps -a --format '{{.Names}}' | grep -qx "${COMPOSE_PROJECT_NAME}-nginx-1"; then
+                    echo "Stopping existing ${COMPOSE_PROJECT_NAME}-nginx-1 container..."
+                    docker stop "${COMPOSE_PROJECT_NAME}-nginx-1" || true
+                    docker rm "${COMPOSE_PROJECT_NAME}-nginx-1" || true
+                else
+                    echo "No existing ${COMPOSE_PROJECT_NAME}-nginx-1 container to stop."
+                fi
+            '''
+        }
+
         stage('Deploy ClubOps') {
             sh """
                 IMAGE_TAG=${IMAGE_TAG} docker compose \
