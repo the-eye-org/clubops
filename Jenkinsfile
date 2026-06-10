@@ -44,6 +44,33 @@ node('students') {
             }
         }
 
+        stage('Inspect ClubOps Host Port') {
+            sh '''
+                CLUBOPS_PORT="$(grep -E '^CLUBOPS_HOST_PORT=' .env | tail -n 1 | cut -d= -f2- || true)"
+                CLUBOPS_PORT="$(printf '%s' "${CLUBOPS_PORT:-8006}" | tr -d '\015"')"
+                COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-clubops}"
+
+                echo "Inspecting host port ${CLUBOPS_PORT} before deployment..."
+                echo "Docker containers publishing ${CLUBOPS_PORT}:"
+                docker ps --filter "publish=${CLUBOPS_PORT}" \
+                    --format 'table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Ports}}' || true
+
+                echo "Current ${COMPOSE_PROJECT_NAME} compose containers:"
+                docker compose -p ${COMPOSE_PROJECT_NAME} -f docker-compose.prod.yml ps || true
+
+                echo "Host listeners on port ${CLUBOPS_PORT}:"
+                if command -v ss >/dev/null 2>&1; then
+                    ss -ltnp "sport = :${CLUBOPS_PORT}" || true
+                elif command -v lsof >/dev/null 2>&1; then
+                    lsof -nP -iTCP:"${CLUBOPS_PORT}" -sTCP:LISTEN || true
+                elif command -v netstat >/dev/null 2>&1; then
+                    netstat -ltnp 2>/dev/null | grep ":${CLUBOPS_PORT}\\b" || true
+                else
+                    echo "No ss, lsof, or netstat command available on this Jenkins node."
+                fi
+            '''
+        }
+
         stage('Deploy ClubOps') {
             sh """
                 IMAGE_TAG=${IMAGE_TAG} docker compose \
@@ -56,8 +83,10 @@ node('students') {
         stage('Health Check') {
             sh '''
                 sleep 10
+                CLUBOPS_PORT="$(grep -E '^CLUBOPS_HOST_PORT=' .env | tail -n 1 | cut -d= -f2- || true)"
+                CLUBOPS_PORT="$(printf '%s' "${CLUBOPS_PORT:-8006}" | tr -d '\015"')"
                 docker compose -p clubops -f docker-compose.prod.yml ps
-                curl --fail --show-error --silent http://127.0.0.1:${CLUBOPS_HOST_PORT:-8006}/clubops/api/health
+                curl --fail --show-error --silent http://127.0.0.1:${CLUBOPS_PORT}/clubops/api/health
             '''
         }
 
