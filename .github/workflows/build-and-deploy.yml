@@ -1,0 +1,59 @@
+name: Build and Push ClubOps Docker Images to GHCR
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    env:
+      REGISTRY: ghcr.io
+      BACKEND_IMAGE: ghcr.io/theeye-network/clubops-backend
+      FRONTEND_IMAGE: ghcr.io/theeye-network/clubops-frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.PAT_TOKEN }}
+
+      - name: Build Docker images
+        run: |
+          VERSION=0.1-${GITHUB_SHA::7}
+
+          docker build \
+            -f backend/Dockerfile \
+            -t $BACKEND_IMAGE:latest \
+            -t $BACKEND_IMAGE:$VERSION \
+            ./backend
+
+          docker build \
+            -f frontend/Dockerfile \
+            -t $FRONTEND_IMAGE:latest \
+            -t $FRONTEND_IMAGE:$VERSION \
+            ./frontend
+
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Push Docker images to GHCR
+        run: |
+          docker push $BACKEND_IMAGE:latest
+          docker push $BACKEND_IMAGE:$VERSION
+
+          docker push $FRONTEND_IMAGE:latest
+          docker push $FRONTEND_IMAGE:$VERSION
+
+      - name: Notify Jenkins
+        run: |
+          curl --fail --show-error --silent --insecure "${{ secrets.JENKINS_WEBHOOK_URL }}"
