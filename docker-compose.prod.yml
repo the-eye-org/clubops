@@ -44,7 +44,7 @@ services:
     restart: unless-stopped
 
   backend:
-    image: ghcr.io/theeye-network/clubops-backend:${IMAGE_TAG:-latest}
+    image: ghcr.io/the-eye-org/clubops-backend:${IMAGE_TAG:-latest}
     env_file:
       - .env
     environment:
@@ -67,7 +67,7 @@ services:
       sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
 
   frontend:
-    image: ghcr.io/theeye-network/clubops-frontend:${IMAGE_TAG:-latest}
+    image: ghcr.io/the-eye-org/clubops-frontend:${IMAGE_TAG:-latest}
     expose:
       - "3000"
     restart: unless-stopped

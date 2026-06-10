@@ -14,8 +14,8 @@ jobs:
 
     env:
       REGISTRY: ghcr.io
-      BACKEND_IMAGE: ghcr.io/theeye-network/clubops-backend
-      FRONTEND_IMAGE: ghcr.io/theeye-network/clubops-frontend
+      BACKEND_IMAGE: ghcr.io/the-eye-org/clubops-backend
+      FRONTEND_IMAGE: ghcr.io/the-eye-org/clubops-frontend
 
     steps:
       - name: Checkout repository

@@ -1,7 +1,7 @@
 node('students') {
     def REGISTRY = 'ghcr.io'
-    def BACKEND_IMAGE = 'ghcr.io/theeye-network/clubops-backend'
-    def FRONTEND_IMAGE = 'ghcr.io/theeye-network/clubops-frontend'
+    def BACKEND_IMAGE = 'ghcr.io/the-eye-org/clubops-backend'
+    def FRONTEND_IMAGE = 'ghcr.io/the-eye-org/clubops-frontend'
     def IMAGE_TAG = 'latest'
     def COMPOSE_PROJECT_NAME = 'clubops'
 
