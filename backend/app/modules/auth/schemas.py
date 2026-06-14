@@ -41,6 +41,12 @@ class RefreshRequest(BaseModel):
 class LogoutRequest(BaseModel):
     refresh_token: str
 
+
+class SuperAdminLoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+
 class AdminUserCreate(BaseModel):
     email: EmailStr
     name: str
