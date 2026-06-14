@@ -8,6 +8,7 @@ import CertificateVerify from "@/pages/CertificateVerify";
 import Login from "@/pages/Login";
 import AuthCallback from "@/pages/AuthCallback";
 import AttendanceLogin from "@/pages/AttendanceLogin";
+import AdminLogin from "@/pages/AdminLogin";
 import AttendanceScan from "@/pages/AttendanceScan";
 
 // Participant dashboard
@@ -45,6 +46,7 @@ export default function App() {
       <Routes>
         {/* Public */}
         <Route path="/" element={<EventDiscovery />} />
+        <Route path="/super-admin" element={<AdminLogin />} />
         <Route path="/login" element={<Login />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/attendance-login" element={<AttendanceLogin />} />
