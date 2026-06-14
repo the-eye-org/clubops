@@ -515,7 +515,7 @@ export default function RegistrationList() {
               {m === "list" ? "All Participants" : m === "teams" ? "By Team" : <><Trophy size={11} /> Winners</>}
             </button>
           ))}
-        </div> dev
+        </div>
 
         {/* Filters (list view only) */}
         {viewMode === "list" && (
