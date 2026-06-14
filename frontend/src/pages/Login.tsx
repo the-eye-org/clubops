@@ -1,11 +1,10 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/auth.store";
 
 export default function Login() {
-  const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { setAuth, isAuthenticated } = useAuthStore();
@@ -25,6 +24,7 @@ export default function Login() {
   }, [isAuthenticated, navigate]);
 
   const isPending = !!(searchParams.get("access_token") && searchParams.get("refresh_token"));
+  const oauthError = searchParams.get("error");
 
   return (
     <div style={{
@@ -68,9 +68,26 @@ export default function Login() {
               Welcome back
             </h1>
             <p style={{ fontSize: 14, color: "var(--fog)", lineHeight: 1.6 }}>
-              Sign in with your institutional account<br />to access ClubOps.
+              Sign in with your institutional account<br />to access ClubHub.
             </p>
           </div>
+
+          {/* OAuth error banner */}
+          {oauthError && (
+            <div style={{
+              display: "flex", alignItems: "center", gap: 10,
+              background: "color-mix(in srgb, var(--cinnabar) 12%, transparent)",
+              border: "1px solid color-mix(in srgb, var(--cinnabar) 30%, transparent)",
+              borderRadius: 10, padding: "12px 14px", marginBottom: 16,
+            }}>
+              <AlertCircle size={16} style={{ color: "var(--cinnabar)", flexShrink: 0 }} />
+              <p style={{ fontSize: 13, color: "var(--cinnabar)" }}>
+                {oauthError === "access_denied"
+                  ? "Sign-in was cancelled. Please grant the required permissions to continue."
+                  : "Google sign-in failed. Please try again."}
+              </p>
+            </div>
+          )}
 
           {/* Card */}
           <div style={{
@@ -79,7 +96,7 @@ export default function Login() {
           }}>
             <button
               type="button"
-              onClick={() => { window.location.href = `${basePath}/api/auth/google/login`; }}
+              onClick={() => { window.location.href = "/api/auth/google/login"; }}
               disabled={isPending}
               style={{
                 width: "100%", display: "flex", alignItems: "center", justifyContent: "center",
@@ -111,12 +128,6 @@ export default function Login() {
             </p>
           </div>
 
-          <p style={{ textAlign: "center", marginTop: 24, fontSize: 13, color: "var(--fog)" }}>
-            Developer?{" "}
-            <Link to="/dev-login" style={{ color: "var(--amber)", textDecoration: "none", fontWeight: 500 }}>
-              Dev login →
-            </Link>
-          </p>
         </div>
       </main>
     </div>

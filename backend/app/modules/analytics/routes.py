@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from datetime import date
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
+from fastapi.responses import PlainTextResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -28,6 +30,17 @@ async def event_analytics(
     return await repo.event_analytics(event_id)
 
 
+@router.get("/clubs")
+async def all_clubs_analytics(
+    db: AsyncSession = Depends(get_db),
+    actor: User = Depends(get_current_user),
+) -> list[dict]:
+    if actor.role != UserRole.SUPER_ADMIN:
+        raise ForbiddenError("Super Admin required")
+    repo = AnalyticsRepository(db)
+    return await repo.all_clubs_analytics()
+
+
 @router.get("/clubs/{club_id}")
 async def club_analytics(
     club_id: UUID,
@@ -49,3 +62,35 @@ async def platform_analytics(
         raise ForbiddenError("Super Admin required")
     repo = AnalyticsRepository(db)
     return await repo.platform_analytics()
+
+
+@router.get("/bank-export", response_class=PlainTextResponse)
+async def bank_export(
+    from_date: date = Query(..., description="Start date (YYYY-MM-DD)"),
+    to_date: date = Query(..., description="End date (YYYY-MM-DD)"),
+    db: AsyncSession = Depends(get_db),
+    actor: User = Depends(get_current_user),
+) -> PlainTextResponse:
+    if actor.role != UserRole.SUPER_ADMIN:
+        raise ForbiddenError("Super Admin required")
+    repo = AnalyticsRepository(db)
+    csv_data = await repo.winners_bank_export(from_date, to_date)
+    filename = f"bank-details-{from_date}-to-{to_date}.csv"
+    return PlainTextResponse(
+        csv_data,
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
+@router.get("/bank-details")
+async def bank_details(
+    from_date: date = Query(..., description="Start date (YYYY-MM-DD)"),
+    to_date: date = Query(..., description="End date (YYYY-MM-DD)"),
+    db: AsyncSession = Depends(get_db),
+    actor: User = Depends(get_current_user),
+) -> list[dict]:
+    if actor.role != UserRole.SUPER_ADMIN:
+        raise ForbiddenError("Super Admin required")
+    repo = AnalyticsRepository(db)
+    return await repo.winners_bank_list(from_date, to_date)

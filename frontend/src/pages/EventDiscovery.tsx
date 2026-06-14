@@ -6,6 +6,7 @@ import api from "@/lib/api";
 import type { Event } from "@/types";
 import { EventCard } from "@/components/EventCard";
 import { useAuthStore } from "@/store/auth.store";
+import Footer from "@/components/Footer";
 
 const STATUS_OPTIONS: { value: Event["status"] | "ALL"; label: string }[] = [
   { value: "ALL",      label: "All" },
@@ -70,17 +71,30 @@ export default function EventDiscovery() {
         backdropFilter: "blur(12px)",
         borderBottom: "1px solid var(--seam)",
       }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", height: 58, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <Link to="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
-            <div style={{ width: 28, height: 28, borderRadius: 8, background: "var(--amber)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: 14, fontWeight: 700, color: "var(--ink)" }}>C</span>
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", height: 72, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div className="bg-white p-1.5 rounded-md shrink-0">
+                <img src="/psgtech-logo.png" alt="PSG Tech" className="w-10 h-10 object-contain" />
+              </div>
+              <span style={{ color: "var(--cream)", fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.02em", whiteSpace: "nowrap" }} className="hidden sm:inline">
+                PSG College of Technology
+              </span>
+              <span style={{ color: "var(--cream)", fontSize: 13, fontWeight: 800, textTransform: "uppercase" }} className="sm:hidden">
+                PSG Tech
+              </span>
             </div>
-            <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: 16, color: "var(--cream)", letterSpacing: "-0.02em" }}>ClubOps</span>
-          </Link>
+            <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.1)" }} />
+            <Link to="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
+              <span style={{ color: "var(--cream)", fontFamily: "'DM Serif Display', serif", fontSize: 24, fontWeight: 700 }}>
+                ClubHub
+              </span>
+            </Link>
+          </div>
           <nav style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {isAuthenticated ? (
               <>
-                <span style={{ fontSize: 13, color: "var(--fog)" }}>{user?.name}</span>
+                <span className="hidden sm:inline" style={{ fontSize: 13, color: "var(--fog)" }}>{user?.name}</span>
                 <Link to="/dashboard" className="btn-primary" style={{ textDecoration: "none", fontSize: 13 }}>
                   Dashboard
                 </Link>
@@ -211,6 +225,7 @@ export default function EventDiscovery() {
           </>
         )}
       </main>
+      <Footer />
     </div>
   );
 }

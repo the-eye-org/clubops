@@ -7,7 +7,6 @@ import EventDetail from "@/pages/EventDetail";
 import CertificateVerify from "@/pages/CertificateVerify";
 import Login from "@/pages/Login";
 import AuthCallback from "@/pages/AuthCallback";
-import DevLogin from "@/pages/DevLogin";
 import AttendanceLogin from "@/pages/AttendanceLogin";
 import AttendanceScan from "@/pages/AttendanceScan";
 
@@ -17,6 +16,7 @@ import MyEvents from "@/pages/dashboard/MyEvents";
 import MyTeams from "@/pages/dashboard/MyTeams";
 import CertificateVault from "@/pages/dashboard/CertificateVault";
 import Notifications from "@/pages/dashboard/Notifications";
+import BrowseEvents from "@/pages/dashboard/BrowseEvents";
 
 // Organizer / manage
 import EventOverview from "@/pages/manage/EventOverview";
@@ -41,13 +41,12 @@ function ProtectedRoute({ children }: { children: JSX.Element }) {
 
 export default function App() {
   return (
-    <BrowserRouter basename="/clubops">
+    <BrowserRouter>
       <Routes>
         {/* Public */}
         <Route path="/" element={<EventDiscovery />} />
         <Route path="/login" element={<Login />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="/dev-login" element={<DevLogin />} />
         <Route path="/attendance-login" element={<AttendanceLogin />} />
         <Route path="/attendance/:eventId" element={<AttendanceScan />} />
         <Route path="/events/:slug" element={<EventDetail />} />
@@ -56,6 +55,7 @@ export default function App() {
         {/* Participant dashboard */}
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/dashboard/events" element={<ProtectedRoute><MyEvents /></ProtectedRoute>} />
+        <Route path="/dashboard/browse" element={<ProtectedRoute><BrowseEvents /></ProtectedRoute>} />
         <Route path="/dashboard/teams" element={<ProtectedRoute><MyTeams /></ProtectedRoute>} />
         <Route path="/dashboard/certificates" element={<ProtectedRoute><CertificateVault /></ProtectedRoute>} />
         <Route path="/dashboard/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />

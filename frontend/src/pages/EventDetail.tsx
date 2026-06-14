@@ -27,6 +27,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuthStore } from "@/store/auth.store";
 import { fmtTimeIST, fmtDateTimeMedIST } from "@/lib/dateIST";
+import Footer from "@/components/Footer";
 
 const STATUS_BADGE: Record<Event["status"], { label: string; variant: string }> = {
   PUBLISHED: { label: "Published", variant: "bg-blue-100 text-blue-700" },
@@ -145,8 +146,10 @@ export default function EventDetail() {
   }
 
   const statusConfig = STATUS_BADGE[event.status];
+  const now = new Date();
   const registrationOpen =
-    event.registration_end && !isPast(new Date(event.registration_end));
+    (!event.registration_start || isPast(new Date(event.registration_start))) &&
+    (!event.registration_end || !isPast(new Date(event.registration_end)));
 
   return (
     <div className="min-h-screen bg-background">
@@ -341,6 +344,7 @@ export default function EventDetail() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }
