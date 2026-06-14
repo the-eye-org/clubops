@@ -16,15 +16,21 @@ from app.modules.registration.schemas import (
     QRResponse, RegistrationDetailOut, RegistrationOut, RegistrationWithEventOut,
 )
 from app.modules.registration.services import RegistrationService
+from app.modules.teams.repos import TeamRepository
 from app.shared.enums import UserRole
+from app.shared.exceptions import ForbiddenError
 from app.shared.exceptions import ForbiddenError
 
 router = APIRouter(tags=["registration"])
 
 
 def _svc(db: AsyncSession = Depends(get_db)) -> RegistrationService:
-    return RegistrationService(RegistrationRepository(db), EventRepository(db),
-                               NotificationRepository(db))
+    return RegistrationService(
+        RegistrationRepository(db),
+        EventRepository(db),
+        NotificationRepository(db),
+        TeamRepository(db),
+    )
 
 
 def _require_club_admin(actor: User = Depends(get_current_user)) -> User:
@@ -39,6 +45,9 @@ async def register(
     svc: RegistrationService = Depends(_svc),
     actor: User = Depends(get_current_user),
 ) -> RegistrationOut:
+    non_student_roles = {UserRole.FACULTY_ADVISOR, UserRole.CLUB_ADMIN, UserRole.SUPER_ADMIN, UserRole.ATTENDANCE_TEAM}
+    if actor.role in non_student_roles:
+        raise ForbiddenError("Only students can register for events")
     reg = await svc.register(event_id, actor)
     return RegistrationOut.model_validate(reg)
 

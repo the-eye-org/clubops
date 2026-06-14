@@ -11,9 +11,8 @@ from app.core.database import get_db
 from app.modules.auth.deps import get_current_user
 from app.modules.auth.models import User
 from app.modules.auth.repos import UserRepository
-from app.modules.auth.schemas import DevLoginRequest, LogoutRequest, RefreshRequest, TokenPair, UserOut
+from app.modules.auth.schemas import LogoutRequest, RefreshRequest, TokenPair, UserOut
 from app.modules.auth.services import AuthService
-from app.shared.exceptions import ForbiddenError
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -31,11 +30,14 @@ async def google_login(service: AuthService = Depends(_get_service)) -> Redirect
 
 @router.get("/google/callback")
 async def google_callback(
-    code: str,
     service: AuthService = Depends(_get_service),
+    code: str | None = None,
+    error: str | None = None,
 ) -> RedirectResponse:
-    _, access_token, refresh_token = await service.google_callback(code)
     frontend_url = settings.FRONTEND_URL
+    if error or not code:
+        return RedirectResponse(url=f"{frontend_url}/login?error=access_denied")
+    _, access_token, refresh_token = await service.google_callback(code)
     return RedirectResponse(
         url=f"{frontend_url}/auth/callback?access_token={access_token}&refresh_token={refresh_token}"
     )
@@ -62,18 +64,3 @@ async def logout(
 @router.get("/me", response_model=UserOut)
 async def me(current_user: User = Depends(get_current_user)) -> UserOut:
     return UserOut.model_validate(current_user)
-
-
-@router.post("/dev-login", response_model=TokenPair, tags=["auth (dev)"])
-async def dev_login(
-    body: DevLoginRequest,
-    service: AuthService = Depends(_get_service),
-) -> TokenPair:
-    """
-    Development-only login. Returns a real token pair without Google OAuth.
-    Only available when ENVIRONMENT=development.
-    """
-    if settings.ENVIRONMENT != "development":
-        raise ForbiddenError("Dev login is only available in development mode")
-    access_token, refresh_token = await service.dev_login(body.email, body.name, body.role)
-    return TokenPair(access_token=access_token, refresh_token=refresh_token)

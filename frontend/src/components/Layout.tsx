@@ -1,10 +1,16 @@
+import { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/auth.store";
 import {
   LayoutDashboard, CalendarDays, Users, Award, Bell, LogOut,
   ChevronRight, Settings, ShieldCheck, ClipboardCheck, Megaphone,
-  BarChart3, Wallet, ListChecks, Radio, KeyRound,
+  BarChart3, Wallet, ListChecks, Radio, KeyRound, Building2,
+  Menu, X,
 } from "lucide-react";
+import api from "@/lib/api";
+import type { Event } from "@/types";
+import Footer from "./Footer";
 
 interface NavItem {
   to: string;
@@ -16,17 +22,16 @@ interface NavItem {
 function getNavItems(role: string, eventId?: string): NavItem[] {
   if (role === "SUPER_ADMIN") {
     return [
-      { to: "/admin",           label: "Metrics",        icon: <BarChart3 size={15} />, exact: true },
-      { to: "/admin?tab=users", label: "Users",          icon: <Users size={15} /> },
-      { to: "/admin?tab=clubs", label: "Clubs",          icon: <Settings size={15} /> },
-      { to: "/faculty/approvals", label: "Approvals",   icon: <ShieldCheck size={15} /> },
-      { to: "/dashboard",       label: "Dashboard",      icon: <LayoutDashboard size={15} /> },
+      { to: "/admin",              label: "Metrics",        icon: <BarChart3 size={15} />, exact: true },
+      { to: "/admin?tab=analytics",label: "Club Analytics", icon: <Building2 size={15} /> },
+      { to: "/admin?tab=users",    label: "Users",          icon: <Users size={15} /> },
+      { to: "/admin?tab=clubs",    label: "Club Setup",     icon: <Settings size={15} /> },
+      { to: "/faculty/approvals",  label: "Approvals",      icon: <ShieldCheck size={15} /> },
     ];
   }
   if (role === "FACULTY_ADVISOR") {
     return [
       { to: "/faculty/approvals", label: "Approval Queue", icon: <ClipboardCheck size={15} /> },
-      { to: "/dashboard",         label: "Dashboard",       icon: <LayoutDashboard size={15} /> },
     ];
   }
   if (role === "CLUB_ADMIN") {
@@ -55,6 +60,7 @@ function getNavItems(role: string, eventId?: string): NavItem[] {
   }
   return [
     { to: "/dashboard",              label: "Overview",      icon: <LayoutDashboard size={15} />, exact: true },
+    { to: "/",                       label: "Browse Events", icon: <CalendarDays size={15} />, exact: true },
     { to: "/dashboard/events",       label: "My Events",     icon: <CalendarDays size={15} /> },
     { to: "/dashboard/teams",        label: "Teams",         icon: <Users size={15} /> },
     { to: "/dashboard/certificates", label: "Certificates",  icon: <Award size={15} /> },
@@ -81,6 +87,19 @@ export default function Layout({ children, eventId }: LayoutProps) {
   const role = user?.role ?? "PARTICIPANT";
   const navItems = getNavItems(role, eventId);
   const section = eventId ? "Event" : (SECTION_LABEL[role] ?? "Portal");
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const { data: eventData } = useQuery<Event>({
+    queryKey: ["event", eventId],
+    queryFn: () => api.get(`/events/by-id/${eventId}`).then((r) => r.data),
+    enabled: !!eventId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  useEffect(() => {
+    document.body.classList.toggle("drawer-open", mobileOpen);
+    return () => { document.body.classList.remove("drawer-open"); };
+  }, [mobileOpen]);
 
   const initials = user?.name
     ? user.name.split(" ").map((p) => p[0]).join("").toUpperCase().slice(0, 2)
@@ -91,28 +110,9 @@ export default function Layout({ children, eventId }: LayoutProps) {
     navigate("/");
   }
 
-  return (
-    <div className="flex h-screen overflow-hidden" style={{ background: "var(--ink)", fontFamily: "'Outfit', sans-serif" }}>
-
-      {/* ── Sidebar ── */}
-      <aside className="w-56 shrink-0 flex flex-col h-full" style={{
-        background: "var(--ink-soft)",
-        borderRight: "1px solid var(--seam)",
-      }}>
-
-        {/* Logo */}
-        <div className="px-5 pt-6 pb-5" style={{ borderBottom: "1px solid var(--seam)" }}>
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-              style={{ background: "var(--amber)" }}>
-              <span style={{ color: "var(--ink)", fontFamily: "'DM Serif Display', serif", fontSize: 13, fontWeight: 700, lineHeight: 1 }}>C</span>
-            </div>
-            <span style={{ color: "var(--cream)", fontFamily: "'DM Serif Display', serif", fontSize: 15, letterSpacing: "-0.02em" }}>
-              ClubOps
-            </span>
-          </div>
-        </div>
-
+  function SidebarContents({ onNavClick }: { onNavClick?: () => void }) {
+    return (
+      <>
         {/* Section */}
         <div className="px-5 pt-5 pb-2">
           <span style={{
@@ -121,6 +121,34 @@ export default function Layout({ children, eventId }: LayoutProps) {
           }}>{section}</span>
         </div>
 
+        {/* Event name banner */}
+        {eventId && (
+          <div style={{
+            margin: "0 12px 8px",
+            padding: "10px 12px",
+            background: "color-mix(in srgb, var(--amber) 8%, transparent)",
+            border: "1px solid color-mix(in srgb, var(--amber) 25%, transparent)",
+            borderRadius: 10,
+          }}>
+            {eventData ? (
+              <p style={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: "var(--cream)",
+                lineHeight: 1.3,
+                wordBreak: "break-word",
+              }}>
+                {eventData.title}
+              </p>
+            ) : (
+              <div style={{ height: 14, background: "var(--ink-muted)", borderRadius: 4, width: "80%" }} />
+            )}
+            <p style={{ fontSize: 10, color: "var(--amber)", marginTop: 3, fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase" }}>
+              Managing event
+            </p>
+          </div>
+        )}
+
         {/* Nav */}
         <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto pb-2">
           {navItems.map((item) => (
@@ -128,6 +156,7 @@ export default function Layout({ children, eventId }: LayoutProps) {
               key={item.to}
               to={item.to}
               end={item.exact}
+              onClick={onNavClick}
               className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
             >
               {({ isActive }) => (
@@ -179,12 +208,129 @@ export default function Layout({ children, eventId }: LayoutProps) {
             </button>
           </div>
         </div>
+      </>
+    );
+  }
+
+  return (
+    <div className="flex h-screen overflow-hidden relative" style={{ background: "var(--ink)", fontFamily: "'Outfit', sans-serif" }}>
+
+      {/* ── Desktop Sidebar (hidden on mobile) ── */}
+      <aside className="hidden md:flex md:w-56 md:shrink-0 flex-col h-full" style={{
+        background: "var(--ink-soft)",
+        borderRight: "1px solid var(--seam)",
+      }}>
+        {/* Logo */}
+        <div className="px-5 pt-6 pb-5" style={{ borderBottom: "1px solid var(--seam)" }}>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-white p-1.5 rounded-md shrink-0">
+                <img src="/psgtech-logo.png" alt="PSG Tech" className="w-10 h-10 object-contain" />
+              </div>
+              <span style={{ color: "var(--cream)", fontSize: 12, fontWeight: 800, lineHeight: 1.2, textTransform: "uppercase", letterSpacing: "0.02em" }}>
+                PSG College of Technology
+              </span>
+            </div>
+            <div className="h-px bg-white/5 mx-1" />
+            <div className="flex items-center gap-3">
+              <span style={{ color: "var(--cream)", fontFamily: "'DM Serif Display', serif", fontSize: 24, fontWeight: 700 }}>
+                ClubHub
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <SidebarContents />
       </aside>
 
       {/* ── Main content ── */}
-      <main className="flex-1 overflow-y-auto min-w-0 dot-grid">
-        {children}
+      <main className="flex-1 overflow-y-auto min-w-0 dot-grid flex flex-col">
+        {/* Mobile top bar */}
+        <div className="md:hidden sticky top-0 z-30 flex items-center justify-between px-4"
+          style={{
+            height: 72,
+            background: "var(--ink-soft)",
+            borderBottom: "1px solid var(--seam)",
+          }}>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="bg-white p-1 rounded-md shrink-0">
+                <img src="/psgtech-logo.png" alt="PSG Tech" className="w-8 h-8 object-contain" />
+              </div>
+              <span style={{ color: "var(--cream)", fontSize: 11, fontWeight: 800, textTransform: "uppercase" }}>PSG Tech</span>
+            </div>
+            <div className="h-8 w-px bg-white/10" />
+            <div className="flex items-center gap-2">
+              <span style={{ color: "var(--cream)", fontFamily: "'DM Serif Display', serif", fontSize: 20, fontWeight: 700 }}>
+                ClubHub
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setMobileOpen(true)}
+            className="flex items-center justify-center rounded-lg transition-colors"
+            style={{ color: "var(--dust)", minHeight: 44, minWidth: 44 }}
+            aria-label="Open navigation"
+          >
+            <Menu size={20} />
+          </button>
+        </div>
+
+        <div className="flex-1">
+          {children}
+        </div>
+
+        <Footer />
       </main>
+
+      {/* ── Mobile drawer backdrop ── */}
+      {mobileOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-40"
+          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(2px)" }}
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* ── Mobile drawer panel ── */}
+      <aside
+        className="md:hidden fixed inset-y-0 left-0 z-50 w-64 flex flex-col h-full"
+        style={{
+          background: "var(--ink-soft)",
+          borderRight: "1px solid var(--seam)",
+          transform: mobileOpen ? "translateX(0)" : "translateX(-100%)",
+          transition: "transform 250ms cubic-bezier(.22,.68,0,1.2)",
+        }}
+      >
+        {/* Drawer header with logo + close */}
+        <div className="flex items-center justify-between px-5 pt-5 pb-5" style={{ borderBottom: "1px solid var(--seam)" }}>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-white p-1.5 rounded-md shrink-0">
+                <img src="/psgtech-logo.png" alt="PSG Tech" className="w-10 h-10 object-contain" />
+              </div>
+              <span style={{ color: "var(--cream)", fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.02em" }}>PSG Tech</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span style={{ color: "var(--cream)", fontFamily: "'DM Serif Display', serif", fontSize: 24, fontWeight: 700 }}>
+                ClubHub
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setMobileOpen(false)}
+            className="flex items-center justify-center rounded-lg transition-colors"
+            style={{ color: "var(--dust)", minHeight: 36, minWidth: 36 }}
+            aria-label="Close navigation"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <SidebarContents onNavClick={() => setMobileOpen(false)} />
+      </aside>
     </div>
   );
 }

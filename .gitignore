@@ -55,4 +55,3 @@ Thumbs.db
 # Keep migrations tracked; ignore local test databases
 *.db
 *.sqlite3
-/google client secret.json

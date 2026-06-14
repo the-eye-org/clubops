@@ -15,6 +15,29 @@ class ScanResponse(BaseModel):
     is_duplicate: bool
     record_id: str | None = None
     message: str | None = None
+    participant_name: str | None = None
+    roll_number: str | None = None
+    team_name: str | None = None
+
+
+class RollLookupRequest(BaseModel):
+    roll_number: str
+    event_id: UUID
+
+
+class RollLookupResponse(BaseModel):
+    reg_id: str
+    participant_name: str
+    roll_number: str
+    email: str
+    team_name: str | None = None
+    status: str
+
+
+class RollScanRequest(BaseModel):
+    roll_number: str
+    event_id: UUID
+    checkpoint_id: UUID
 
 
 class AttendanceDashboard(BaseModel):

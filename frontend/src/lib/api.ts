@@ -1,11 +1,8 @@
 import axios, { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import { useAuthStore } from "@/store/auth.store";
 
-const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
-const apiBaseURL = `${basePath}/api`;
-
 const api: AxiosInstance = axios.create({
-  baseURL: apiBaseURL,
+  baseURL: "/api",
   headers: { "Content-Type": "application/json" },
 });
 
@@ -51,7 +48,7 @@ api.interceptors.response.use(
         const { refreshToken, setAuth, logout } = useAuthStore.getState();
         if (!refreshToken) throw new Error("No refresh token");
 
-        const resp = await axios.post(`${apiBaseURL}/auth/refresh`, { refresh_token: refreshToken });
+        const resp = await axios.post("/api/auth/refresh", { refresh_token: refreshToken });
         const { access_token, refresh_token } = resp.data;
         setAuth(useAuthStore.getState().user!, access_token, refresh_token);
 
@@ -61,7 +58,7 @@ api.interceptors.response.use(
       } catch (err) {
         processQueue(err, null);
         useAuthStore.getState().logout();
-        window.location.href = `${basePath}/`;
+        window.location.href = "/";
         return Promise.reject(err);
       } finally {
         isRefreshing = false;

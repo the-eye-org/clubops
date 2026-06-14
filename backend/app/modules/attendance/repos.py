@@ -75,7 +75,7 @@ class AttendanceRepository:
     async def list_present_users(self, event_id: UUID) -> list[dict]:
         """Return distinct users who were scanned present at this event."""
         q = (
-            select(User.id, User.name, User.email)
+            select(User.id, User.name, User.email, User.roll_number)
             .join(Registration, Registration.user_id == User.id)
             .join(AttendanceRecord, AttendanceRecord.registration_id == Registration.id)
             .join(Checkpoint, AttendanceRecord.checkpoint_id == Checkpoint.id)
@@ -87,4 +87,54 @@ class AttendanceRepository:
             .distinct(User.id)
         )
         rows = await self.db.execute(q)
-        return [{"user_id": str(r.id), "name": r.name, "email": r.email} for r in rows]
+        return [{"user_id": str(r.id), "name": r.name, "email": r.email, "roll_number": r.roll_number} for r in rows]
+
+    async def get_participant_info(self, reg_id: UUID) -> dict:
+        """Return participant name, roll number, and team name for scan result display."""
+        from app.modules.teams.models import Team
+        q = (
+            select(User.name, User.roll_number, Team.name.label("team_name"))
+            .join(Registration, Registration.user_id == User.id)
+            .outerjoin(Team, Registration.team_id == Team.id)
+            .where(Registration.id == reg_id)
+        )
+        row = (await self.db.execute(q)).one_or_none()
+        if not row:
+            return {"participant_name": None, "roll_number": None, "team_name": None}
+        return {
+            "participant_name": row.name,
+            "roll_number": row.roll_number,
+            "team_name": row.team_name,
+        }
+
+    async def get_registration_by_roll(self, event_id: UUID, roll_number: str) -> dict | None:
+        """Look up a confirmed registration by roll number for the given event."""
+        from sqlalchemy import func as sqlfunc
+        from app.modules.teams.models import Team
+        q = (
+            select(
+                Registration.id.label("reg_id"),
+                User.name,
+                User.roll_number,
+                User.email,
+                Team.name.label("team_name"),
+                Registration.status,
+            )
+            .join(User, Registration.user_id == User.id)
+            .outerjoin(Team, Registration.team_id == Team.id)
+            .where(
+                Registration.event_id == event_id,
+                sqlfunc.upper(User.roll_number) == roll_number.upper(),
+            )
+        )
+        row = (await self.db.execute(q)).one_or_none()
+        if not row:
+            return None
+        return {
+            "reg_id": str(row.reg_id),
+            "participant_name": row.name,
+            "roll_number": row.roll_number,
+            "email": row.email,
+            "team_name": row.team_name,
+            "status": row.status,
+        }
